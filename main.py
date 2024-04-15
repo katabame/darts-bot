@@ -1,6 +1,6 @@
 from hata import Activity, ActivityType, Emoji, BUILTIN_EMOJIS, Client, Embed, now_as_id, wait_for_interruption
 
-from random import choice
+from random import choice, choices
 from string import ascii_letters, digits
 import json
 import re
@@ -120,7 +120,7 @@ async def start(
     channel = await Satori.channel_create(
         event.guild_id,
         parent_id = event.channel.parent_id,
-        name = f'darts-{''.join(choice(ascii_letters+digits) for _ in range(5))}'
+        name = f'darts-{''.join(choices(ascii_letters+digits, k = 5))}'
     )
 
     await Satori.message_create(channel, message)
