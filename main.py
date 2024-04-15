@@ -117,10 +117,11 @@ async def start(
                 inline = True
             )
 
+    channel_id = ''.join(choices(ascii_letters+digits, k = 5))
     channel = await Satori.channel_create(
         event.guild_id,
         parent_id = event.channel.parent_id,
-        name = f'darts-{''.join(choices(ascii_letters+digits, k = 5))}'
+        name = f'darts-{channel_id}'
     )
 
     await Satori.message_create(channel, message)
