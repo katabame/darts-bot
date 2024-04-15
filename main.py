@@ -1,5 +1,4 @@
 from hata import Activity, ActivityType, Emoji, BUILTIN_EMOJIS, Client, Embed, now_as_id, wait_for_interruption
-from hata.ext.plugin_loader import add_default_plugin_variables, register_and_load_plugin
 
 from random import choice
 import json
@@ -17,11 +16,6 @@ Satori = Client(
     extensions = 'slash',
     activity = Activity('ダーツ', activity_type = ActivityType.competing)
 )
-
-add_default_plugin_variables(Satori=Satori)
-#register_and_load_plugin('count-up')
-#register_and_load_plugin('cricket')
-#register_and_load_plugin('zero-one')
 
 ## Slash commands
 @Satori.interactions(guild = config['guildId'])
@@ -231,18 +225,555 @@ async def message_create(client, message):
                     if current_round == 8:
                         new_field_value += 'Stats [ESTABLISHED]\n'
                         new_field_value += f'**PPR** {current_score / current_round:.2f} **PPD** {current_score / (current_round * 3):.2f} **Rt** 0.00\n'
+
+                        embed.fields[0].name = embed.fields[0].name.replace('🎯 ', '')
+                        gameover_flag = True
                     else:
                         new_field_value += 'Stats [REALTIME]\n'
                         new_field_value += f'**PPR** {current_score / current_round:.2f} **PPD** {current_score / (current_round * 3):.2f} **Rt** 0.00\n'
 
                     embed.fields[1].value = new_field_value
 
-                    if current_round == 8:
-                        embed.fields[0].name = embed.fields[0].name.replace('🎯 ', '')
+            elif embed.author.name == 'CRICKET':
+                # red thrown
+                if embed.fields[0].name.startswith('🎯'):
+                    round_score = 0
+                    round_marks = 0
+                    round_marks_text = ''
+                    marks_red = [] # 20:0, 19:1, 18:2, 17:3, 16:4, 15:5, BULL:6
+                    marks_blue = []
+                    marks_text = ''
+                    current_round = 1
+                    full_open_flag = True
+                    ignore_darts = 0
+
+                    target_marks = re.findall(r'^.+$', embed.description, re.MULTILINE)
+                    for target_mark in target_marks:
+                        mark_red = re.findall(r'.*([0-3])mark_red.*', target_mark)
+                        marks_red.append(int(mark_red[0]))
+                        mark_blue = re.findall(r'.*([0-3])mark_blue.*', target_mark)
+                        marks_blue.append(int(mark_blue[0]))
+
+                    for i in range(0, 7):
+                        if marks_red[i] != 3:
+                            full_open_flag = False
+
+                    for score in scores:
+                        if score[1] == 'BULL':
+                            if score[0] == 'D':
+                                if marks_blue[6] == 3:
+                                    if marks_red[6] == 3:
+                                        round_marks_text += f'{constants.mark_0_red}'
+                                    elif marks_red[6] == 2:
+                                        round_marks += 1
+                                        round_marks_text += f'{constants.mark_1_red}'
+                                        marks_red[6] += 1
+                                    else:
+                                        round_marks += 2
+                                        round_marks_text += f'{constants.mark_2_red}'
+                                        marks_red[6] += 2
+                                else:
+                                    round_marks += 2
+                                    round_marks_text += f'{constants.mark_2_red}'
+                                    if marks_red[6] == 3:
+                                        round_score += 50
+                                    elif marks_red[6] == 2:
+                                        marks_red[6] += 1
+                                        round_score += 25
+                                    else:
+                                        marks_red[6] += 2
+                            else:
+                                if marks_blue[6] == 3:
+                                    if marks_red[6] == 3:
+                                        round_marks_text += f'{constants.mark_0_red}'
+                                    else:
+                                        round_marks += 1
+                                        round_marks_text += f'{constants.mark_1_red}'
+                                        marks_red[6] += 1
+                                else:
+                                    round_marks += 1
+                                    round_marks_text += f'{constants.mark_1_red}'
+                                    if marks_red[6] == 3:
+                                        round_score += 25
+                                    else:
+                                        marks_red[6] += 1
+
+                        elif score[1] == 'OUT':
+                            round_marks += 0
+                            round_marks_text += f'{constants.mark_0_red}'
+
+                            if full_open_flag == True:
+                                ignore_darts += 1
+
+                        elif score[0] == '' or score[0] == 'S':
+                            if int(score[1]) >= 15:
+                                if marks_blue[20 - int(score[1])] == 3:
+                                    if marks_red[20 - int(score[1])] == 3:
+                                        round_marks_text += f'{constants.mark_0_red}'
+                                    else:
+                                        round_marks += 1
+                                        round_marks_text += f'{constants.mark_1_red}'
+                                else:
+                                    round_marks += 1
+                                    round_marks_text += f'{constants.mark_1_red}'
+                                    if marks_red[20 - int(score[1])] == 3:
+                                        round_score += int(score[1])
+                                    else:
+                                        marks_red[20 - int(score[1])] += 1
+                            else:
+                                round_marks += 0
+                                round_marks_text += f'{constants.mark_0_red}'
+
+                        elif score[0] == 'D':
+                            if int(score[1]) >= 15:
+                                if marks_blue[20 - int(score[1])] == 3:
+                                    if marks_red[20 - int(score[1])] == 3:
+                                        round_marks_text += f'{constants.mark_0_red}'
+                                    if marks_red[20 - int(score[1])] == 2:
+                                        round_marks_text += f'{constants.mark_1_red}'
+                                        round_marks += 1
+                                        marks_red[20 - int(score[1])] += 1
+                                    else:
+                                        round_marks_text += f'{constants.mark_2_red}'
+                                        round_marks += 2
+                                        marks_red[20 - int(score[1])] += 2
+                                else:
+                                    round_marks += 2
+                                    round_marks_text += f'{constants.mark_2_red}'
+                                    if marks_red[20 - int(score[1])] == 3:
+                                        round_score += int(score[1]) * 2
+                                    elif marks_red[20 - int(score[1])] == 2:
+                                        marks_red[20 - int(score[1])] += 1
+                                        round_score += int(score[1])
+                                    else:
+                                        marks_red[20 - int(score[1])] += 2
+                            else:
+                                round_marks += 0
+                                round_marks_text += f'{constants.mark_0_red}'
+
+                        elif score[0] == 'T':
+                            if int(score[1]) >= 15:
+                                if marks_blue[20 - int(score[1])] == 3:
+                                    if marks_red[20 - int(score[1])] == 3:
+                                        round_marks_text += f'{constants.mark_0_red}'
+                                    elif marks_red[20 - int(score[1])] == 2:
+                                        round_marks_text += f'{constants.mark_1_red}'
+                                        round_marks += 1
+                                    elif marks_red[20 - int(score[1])] == 1:
+                                        round_marks_text += f'{constants.mark_2_red}'
+                                        round_marks += 2
+                                    else:
+                                        round_marks_text += f'{constants.mark_3_red}'
+                                        round_marks += 3
+                                else:
+                                    round_marks += 3
+                                    round_marks_text += f'{constants.mark_3_red}'
+                                    if marks_red[20 - int(score[1])] == 3:
+                                        round_score += int(score[1]) * 3
+                                    elif marks_red[20 - int(score[1])] == 2:
+                                        marks_red[20 - int(score[1])] += 1
+                                        round_score += int(score[1]) * 2
+                                    elif marks_red[20 - int(score[1])] == 1:
+                                        marks_red[20 - int(score[1])] += 2
+                                        round_score += int(score[1])
+                                    else:
+                                        marks_red[20 - int(score[1])] += 3
+                            else:
+                                round_marks += 0
+                                round_marks_text += f'{constants.mark_0_red}'
+
+                    for i in range(0, 7):
+                        if i == 6:
+                            if marks_red[i] == 3:
+                                if marks_blue[i] == 3:
+                                    marks_text += f'{constants.mark_3_red} ~~**BULL**~~ {constants.mark_3_blue}\n'
+                                if marks_blue[i] == 2:
+                                    marks_text += f'{constants.mark_3_red} **BULL** {constants.mark_2_blue}\n'
+                                if marks_blue[i] == 1:
+                                    marks_text += f'{constants.mark_3_red} **BULL** {constants.mark_1_blue}\n'
+                                else:
+                                    marks_text += f'{constants.mark_3_red} **BULL** {constants.mark_0_blue}\n'
+
+                            elif marks_red[i] == 2:
+                                if marks_blue[i] == 3:
+                                    marks_text += f'{constants.mark_2_red} **BULL** {constants.mark_3_blue}\n'
+                                if marks_blue[i] == 2:
+                                    marks_text += f'{constants.mark_2_red} **BULL** {constants.mark_2_blue}\n'
+                                if marks_blue[i] == 1:
+                                    marks_text += f'{constants.mark_2_red} **BULL** {constants.mark_1_blue}\n'
+                                else:
+                                    marks_text += f'{constants.mark_2_red} **BULL** {constants.mark_0_blue}\n'
+
+                            elif marks_red[i] == 1:
+                                if marks_blue[i] == 3:
+                                    marks_text += f'{constants.mark_1_red} **BULL** {constants.mark_3_blue}\n'
+                                if marks_blue[i] == 2:
+                                    marks_text += f'{constants.mark_1_red} **BULL** {constants.mark_2_blue}\n'
+                                if marks_blue[i] == 1:
+                                    marks_text += f'{constants.mark_1_red} **BULL** {constants.mark_1_blue}\n'
+                                else:
+                                    marks_text += f'{constants.mark_1_red} **BULL** {constants.mark_0_blue}\n'
+
+                            else:
+                                if marks_blue[i] == 3:
+                                    marks_text += f'{constants.mark_0_red} **BULL** {constants.mark_3_blue}\n'
+                                if marks_blue[i] == 2:
+                                    marks_text += f'{constants.mark_0_red} **BULL** {constants.mark_2_blue}\n'
+                                if marks_blue[i] == 1:
+                                    marks_text += f'{constants.mark_0_red} **BULL** {constants.mark_1_blue}\n'
+                                else:
+                                    marks_text += f'{constants.mark_0_red} **BULL** {constants.mark_0_blue}\n'
+                        else:
+                            if marks_red[i] == 3:
+                                if marks_blue[i] == 3:
+                                    marks_text += f'{constants.mark_3_red} ~~**{20 - i}**~~ {constants.mark_3_blue}\n'
+                                if marks_blue[i] == 2:
+                                    marks_text += f'{constants.mark_3_red} **{20 - i}** {constants.mark_2_blue}\n'
+                                if marks_blue[i] == 1:
+                                    marks_text += f'{constants.mark_3_red} **{20 - i}** {constants.mark_1_blue}\n'
+                                else:
+                                    marks_text += f'{constants.mark_3_red} **{20 - i}** {constants.mark_0_blue}\n'
+
+                            elif marks_red[i] == 2:
+                                if marks_blue[i] == 3:
+                                    marks_text += f'{constants.mark_2_red} **{20 - i}** {constants.mark_3_blue}\n'
+                                if marks_blue[i] == 2:
+                                    marks_text += f'{constants.mark_2_red} **{20 - i}** {constants.mark_2_blue}\n'
+                                if marks_blue[i] == 1:
+                                    marks_text += f'{constants.mark_2_red} **{20 - i}** {constants.mark_1_blue}\n'
+                                else:
+                                    marks_text += f'{constants.mark_2_red} **{20 - i}** {constants.mark_0_blue}\n'
+
+                            elif marks_red[i] == 1:
+                                if marks_blue[i] == 3:
+                                    marks_text += f'{constants.mark_1_red} **{20 - i}** {constants.mark_3_blue}\n'
+                                if marks_blue[i] == 2:
+                                    marks_text += f'{constants.mark_1_red} **{20 - i}** {constants.mark_2_blue}\n'
+                                if marks_blue[i] == 1:
+                                    marks_text += f'{constants.mark_1_red} **{20 - i}** {constants.mark_1_blue}\n'
+                                else:
+                                    marks_text += f'{constants.mark_1_red} **{20 - i}** {constants.mark_0_blue}\n'
+
+                            else:
+                                if marks_blue[i] == 3:
+                                    marks_text += f'{constants.mark_0_red} **{20 - i}** {constants.mark_3_blue}\n'
+                                if marks_blue[i] == 2:
+                                    marks_text += f'{constants.mark_0_red} **{20 - i}** {constants.mark_2_blue}\n'
+                                if marks_blue[i] == 1:
+                                    marks_text += f'{constants.mark_0_red} **{20 - i}** {constants.mark_1_blue}\n'
+                                else:
+                                    marks_text += f'{constants.mark_0_red} **{20 - i}** {constants.mark_0_blue}\n'
+
+                    embed.description = marks_text
+
+                    field_name = embed.fields[0].name.split()
+                    player_name = field_name[1]
+                    current_score = int(field_name[2].replace('[', '').replace(']', ''))
+                    current_score += round_score
+                    current_marks = int(field_name[4])
+                    current_marks += round_marks
+                    embed.fields[0].name = f'{player_name} [{current_score}] (Total: {current_marks} marks)'
+                    embed.fields[1].name = f'🎯 {embed.fields[1].name}'
+
+                    field_value = re.findall(r'^.+$', embed.fields[0].value, re.MULTILINE)
+                    new_field_value = ''
+                    score_added_flag = False
+                    for value in field_value:
+                        round_parsed_data = re.findall(r'\*\*R([0-1][0-9])\*\*(.*)', value)
+                        for round_data in round_parsed_data:
+                            if round_data[1] != '':
+                                new_field_value += f'**R{round_data[0]}** {round_data[1]}\n'
+                            elif score_added_flag == False:
+                                current_round = int(round_data[0])
+                                new_field_value += f'**R{round_data[0]}** {round_marks_text} [{round_score}] {round_score_text}\n'
+                                score_added_flag = True
+
+                    for i in range(current_round + 1, 16):
+                        new_field_value += f'**R{i:02}**\n'
+
+                    new_field_value += '\n'
+
+                    if current_round == 15:
+                        new_field_value += 'Stats [ESTABLISHED]\n'
+                        new_field_value += f'**MPR** {current_marks / current_round:.2f} **MPD** {current_marks / ((current_round * 3) - ignore_darts):.2f} **Rt** 0.00'
+                    else:
+                        new_field_value += 'Stats [REALTIME]\n'
+                        new_field_value += f'**MPR** {current_marks / current_round:.2f} **MPD** {current_marks / ((current_round * 3) - ignore_darts):.2f} **Rt** 0.00'
+
+                    if full_open_flag == True:
+                        embed.fields[1].name = embed.fields[1].name.replace('🎯 ', '')
                         gameover_flag = True
 
-            elif embed.author.name == 'CRICKET':
-                print('CRICKET')
+                    embed.fields[0].value = new_field_value
+
+                # blue thrown
+                else:
+                    round_score = 0
+                    round_marks = 0
+                    round_marks_text = ''
+                    marks_red = [] # 20:0, 19:1, 18:2, 17:3, 16:4, 15:5, BULL:6
+                    marks_blue = []
+                    marks_text = ''
+                    current_round = 1
+                    full_open_flag = True
+                    ignore_darts = 0
+
+                    target_marks = re.findall(r'^.+$', embed.description, re.MULTILINE)
+                    for target_mark in target_marks:
+                        mark_red = re.findall(r'.*([0-3])mark_red.*', target_mark)
+                        marks_red.append(int(mark_red[0]))
+                        mark_blue = re.findall(r'.*([0-3])mark_blue.*', target_mark)
+                        marks_blue.append(int(mark_blue[0]))
+
+                    for i in range(0, 7):
+                        if marks_blue[i] != 3:
+                            full_open_flag = False
+
+                    for score in scores:
+                        if score[1] == 'BULL':
+                            if score[0] == 'D':
+                                if marks_red[6] == 3:
+                                    if marks_blue[6] == 3:
+                                        round_marks_text += f'{constants.mark_0_blue}'
+                                    elif marks_blue[6] == 2:
+                                        round_marks += 1
+                                        round_marks_text += f'{constants.mark_1_blue}'
+                                        marks_blue[6] += 1
+                                    else:
+                                        round_marks += 2
+                                        round_marks_text += f'{constants.mark_2_blue}'
+                                        marks_blue[6] += 2
+                                else:
+                                    round_marks += 2
+                                    round_marks_text += f'{constants.mark_2_blue}'
+                                    if marks_blue[6] == 3:
+                                        round_score += 50
+                                    elif marks_blue[6] == 2:
+                                        marks_blue[6] += 1
+                                        round_score += 25
+                                    else:
+                                        marks_blue[6] += 2
+                            else:
+                                if marks_red[6] == 3:
+                                    if marks_blue[6] == 3:
+                                        round_marks_text += f'{constants.mark_0_blue}'
+                                    else:
+                                        round_marks += 1
+                                        round_marks_text += f'{constants.mark_1_blue}'
+                                        marks_blue[6] += 1
+                                else:
+                                    round_marks += 1
+                                    round_marks_text += f'{constants.mark_1_blue}'
+                                    if marks_blue[6] == 3:
+                                        round_score += 25
+                                    else:
+                                        marks_blue[6] += 1
+
+                        elif score[1] == 'OUT':
+                            round_marks += 0
+                            round_marks_text += f'{constants.mark_0_blue}'
+
+                            if full_open_flag == True:
+                                ignore_darts += 1
+
+                        elif score[0] == '' or score[0] == 'S':
+                            if int(score[1]) >= 15:
+                                if marks_red[20 - int(score[1])] == 3:
+                                    if marks_blue[20 - int(score[1])] == 3:
+                                        round_marks_text += f'{constants.mark_0_blue}'
+                                    else:
+                                        round_marks += 1
+                                        round_marks_text += f'{constants.mark_1_blue}'
+                                else:
+                                    round_marks += 1
+                                    round_marks_text += f'{constants.mark_1_blue}'
+                                    if marks_blue[20 - int(score[1])] == 3:
+                                        round_score += int(score[1])
+                                    else:
+                                        marks_blue[20 - int(score[1])] += 1
+                            else:
+                                round_marks += 0
+                                round_marks_text += f'{constants.mark_0_blue}'
+
+                        elif score[0] == 'D':
+                            if int(score[1]) >= 15:
+                                if marks_red[20 - int(score[1])] == 3:
+                                    if marks_blue[20 - int(score[1])] == 3:
+                                        round_marks_text += f'{constants.mark_0_blue}'
+                                    if marks_blue[20 - int(score[1])] == 2:
+                                        round_marks_text += f'{constants.mark_1_blue}'
+                                        round_marks += 1
+                                        marks_blue[20 - int(score[1])] += 1
+                                    else:
+                                        round_marks_text += f'{constants.mark_2_blue}'
+                                        round_marks += 2
+                                        marks_blue[20 - int(score[1])] += 2
+                                else:
+                                    round_marks += 2
+                                    round_marks_text += f'{constants.mark_2_blue}'
+                                    if marks_blue[20 - int(score[1])] == 3:
+                                        round_score += int(score[1]) * 2
+                                    elif marks_blue[20 - int(score[1])] == 2:
+                                        marks_blue[20 - int(score[1])] += 1
+                                        round_score += int(score[1])
+                                    else:
+                                        marks_blue[20 - int(score[1])] += 2
+                            else:
+                                round_marks += 0
+                                round_marks_text += f'{constants.mark_0_blue}'
+
+                        elif score[0] == 'T':
+                            if int(score[1]) >= 15:
+                                if marks_red[20 - int(score[1])] == 3:
+                                    if marks_blue[20 - int(score[1])] == 3:
+                                        round_marks_text += f'{constants.mark_0_blue}'
+                                    elif marks_blue[20 - int(score[1])] == 2:
+                                        round_marks_text += f'{constants.mark_1_blue}'
+                                        round_marks += 1
+                                    elif marks_blue[20 - int(score[1])] == 1:
+                                        round_marks_text += f'{constants.mark_2_blue}'
+                                        round_marks += 2
+                                    else:
+                                        round_marks_text += f'{constants.mark_3_blue}'
+                                        round_marks += 3
+                                else:
+                                    round_marks += 3
+                                    round_marks_text += f'{constants.mark_3_blue}'
+                                    if marks_blue[20 - int(score[1])] == 3:
+                                        round_score += int(score[1]) * 3
+                                    elif marks_blue[20 - int(score[1])] == 2:
+                                        marks_blue[20 - int(score[1])] += 1
+                                        round_score += int(score[1]) * 2
+                                    elif marks_blue[20 - int(score[1])] == 1:
+                                        marks_blue[20 - int(score[1])] += 2
+                                        round_score += int(score[1])
+                                    else:
+                                        marks_blue[20 - int(score[1])] += 3
+                            else:
+                                round_marks += 0
+                                round_marks_text += f'{constants.mark_0_blue}'
+
+                    for i in range(0, 7):
+                        if i == 6:
+                            if marks_blue[i] == 3:
+                                if marks_red[i] == 3:
+                                    marks_text += f'{constants.mark_3_red} ~~**BULL**~~ {constants.mark_3_blue}\n'
+                                if marks_red[i] == 2:
+                                    marks_text += f'{constants.mark_2_red} **BULL** {constants.mark_3_blue}\n'
+                                if marks_red[i] == 1:
+                                    marks_text += f'{constants.mark_1_red} **BULL** {constants.mark_3_blue}\n'
+                                else:
+                                    marks_text += f'{constants.mark_0_red} **BULL** {constants.mark_3_blue}\n'
+
+                            elif marks_blue[i] == 2:
+                                if marks_red[i] == 3:
+                                    marks_text += f'{constants.mark_3_red} **BULL** {constants.mark_2_blue}\n'
+                                if marks_red[i] == 2:
+                                    marks_text += f'{constants.mark_2_red} **BULL** {constants.mark_2_blue}\n'
+                                if marks_red[i] == 1:
+                                    marks_text += f'{constants.mark_1_red} **BULL** {constants.mark_2_blue}\n'
+                                else:
+                                    marks_text += f'{constants.mark_0_red} **BULL** {constants.mark_2_blue}\n'
+
+                            elif marks_blue[i] == 1:
+                                if marks_red[i] == 3:
+                                    marks_text += f'{constants.mark_3_red} **BULL** {constants.mark_1_blue}\n'
+                                if marks_red[i] == 2:
+                                    marks_text += f'{constants.mark_2_red} **BULL** {constants.mark_1_blue}\n'
+                                if marks_red[i] == 1:
+                                    marks_text += f'{constants.mark_1_red} **BULL** {constants.mark_1_blue}\n'
+                                else:
+                                    marks_text += f'{constants.mark_0_red} **BULL** {constants.mark_1_blue}\n'
+
+                            else:
+                                if marks_red[i] == 3:
+                                    marks_text += f'{constants.mark_3_red} **BULL** {constants.mark_0_blue}\n'
+                                if marks_red[i] == 2:
+                                    marks_text += f'{constants.mark_2_red} **BULL** {constants.mark_0_blue}\n'
+                                if marks_red[i] == 1:
+                                    marks_text += f'{constants.mark_1_red} **BULL** {constants.mark_0_blue}\n'
+                                else:
+                                    marks_text += f'{constants.mark_0_red} **BULL** {constants.mark_0_blue}\n'
+                        else:
+                            if marks_blue[i] == 3:
+                                if marks_red[i] == 3:
+                                    marks_text += f'{constants.mark_3_red} ~~**{20 - i}**~~ {constants.mark_3_blue}\n'
+                                if marks_red[i] == 2:
+                                    marks_text += f'{constants.mark_2_red} **{20 - i}** {constants.mark_3_blue}\n'
+                                if marks_red[i] == 1:
+                                    marks_text += f'{constants.mark_1_red} **{20 - i}** {constants.mark_3_blue}\n'
+                                else:
+                                    marks_text += f'{constants.mark_0_red} **{20 - i}** {constants.mark_3_blue}\n'
+
+                            elif marks_blue[i] == 2:
+                                if marks_red[i] == 3:
+                                    marks_text += f'{constants.mark_3_red} **{20 - i}** {constants.mark_2_blue}\n'
+                                if marks_red[i] == 2:
+                                    marks_text += f'{constants.mark_2_red} **{20 - i}** {constants.mark_2_blue}\n'
+                                if marks_red[i] == 1:
+                                    marks_text += f'{constants.mark_1_red} **{20 - i}** {constants.mark_2_blue}\n'
+                                else:
+                                    marks_text += f'{constants.mark_0_red} **{20 - i}** {constants.mark_2_blue}\n'
+
+                            elif marks_blue[i] == 1:
+                                if marks_red[i] == 3:
+                                    marks_text += f'{constants.mark_3_red} **{20 - i}** {constants.mark_1_blue}\n'
+                                if marks_red[i] == 2:
+                                    marks_text += f'{constants.mark_2_red} **{20 - i}** {constants.mark_1_blue}\n'
+                                if marks_red[i] == 1:
+                                    marks_text += f'{constants.mark_1_red} **{20 - i}** {constants.mark_1_blue}\n'
+                                else:
+                                    marks_text += f'{constants.mark_0_red} **{20 - i}** {constants.mark_1_blue}\n'
+
+                            else:
+                                if marks_red[i] == 3:
+                                    marks_text += f'{constants.mark_3_red} **{20 - i}** {constants.mark_0_blue}\n'
+                                if marks_red[i] == 2:
+                                    marks_text += f'{constants.mark_2_red} **{20 - i}** {constants.mark_0_blue}\n'
+                                if marks_red[i] == 1:
+                                    marks_text += f'{constants.mark_1_red} **{20 - i}** {constants.mark_0_blue}\n'
+                                else:
+                                    marks_text += f'{constants.mark_0_red} **{20 - i}** {constants.mark_0_blue}\n'
+
+                    embed.description = marks_text
+
+                    field_name = embed.fields[1].name.split()
+                    player_name = field_name[1]
+                    current_score = int(field_name[2].replace('[', '').replace(']', ''))
+                    current_score += round_score
+                    current_marks = int(field_name[4])
+                    current_marks += round_marks
+                    embed.fields[1].name = f'{player_name} [{current_score}] (Total: {current_marks} marks)'
+                    embed.fields[0].name = f'🎯 {embed.fields[0].name}'
+
+                    field_value = re.findall(r'^.+$', embed.fields[1].value, re.MULTILINE)
+                    new_field_value = ''
+                    score_added_flag = False
+                    for value in field_value:
+                        round_parsed_data = re.findall(r'\*\*R([0-1][0-9])\*\*(.*)', value)
+                        for round_data in round_parsed_data:
+                            if round_data[1] != '':
+                                new_field_value += f'**R{round_data[0]}** {round_data[1]}\n'
+                            elif score_added_flag == False:
+                                current_round = int(round_data[0])
+                                new_field_value += f'**R{round_data[0]}** {round_marks_text} [{round_score}] {round_score_text}\n'
+                                score_added_flag = True
+
+                    for i in range(current_round + 1, 16):
+                        new_field_value += f'**R{i:02}**\n'
+
+                    new_field_value += '\n'
+
+                    if current_round == 15 or full_open_flag == True:
+                        new_field_value += 'Stats [ESTABLISHED]\n'
+                        new_field_value += f'**MPR** {current_marks / current_round:.2f} **MPD** {current_marks / ((current_round * 3) - ignore_darts):.2f} **Rt** 0.00'
+                        embed.fields[0].name = embed.fields[0].name.replace('🎯 ', '')
+                        gameover_flag = True
+                    else:
+                        new_field_value += 'Stats [REALTIME]\n'
+                        new_field_value += f'**MPR** {current_marks / current_round:.2f} **MPD** {current_marks / ((current_round * 3) - ignore_darts):.2f} **Rt** 0.00'
+
+                    embed.fields[1].value = new_field_value
 
             else:
                 print(embed.author.name)
@@ -279,15 +810,14 @@ async def message_create(client, message):
                 if current_round == 8:
                     new_field_value += 'Stats [ESTABLISHED]\n'
                     new_field_value += f'**PPR** {current_score / current_round:.2f} **PPD** {current_score / (current_round * 3):.2f} **Rt** 0.00\n'
+
+                    embed.fields[0].name = embed.fields[0].name.replace('🎯 ', '')
+                    gameover_flag = True
                 else:
                     new_field_value += 'Stats [REALTIME]\n'
                     new_field_value += f'**PPR** {current_score / current_round:.2f} **PPD** {current_score / (current_round * 3):.2f} **Rt** 0.00\n'
 
                 embed.fields[0].value = new_field_value
-
-                if current_round == 8:
-                    embed.fields[0].name = embed.fields[0].name.replace('🎯 ', '')
-                    gameover_flag = True
 
             elif embed.author.name == 'CRICKET':
                 round_score = 0
@@ -296,11 +826,36 @@ async def message_create(client, message):
                 marks_red = [] # 20:0, 19:1, 18:2, 17:3, 16:4, 15:5, BULL:6
                 marks_red_text = ''
                 current_round = 1
+                full_open_flag = True
+                ignore_darts = 0
 
                 target_marks = re.findall(r'^.+$', embed.description, re.MULTILINE)
                 for target_mark in target_marks:
                     mark = re.findall(r'.*([0-3])mark_red.*', target_mark)
                     marks_red.append(int(mark[0]))
+
+                for i in range(0, 7):
+                    if marks_red[i] != 3:
+                        full_open_flag = False
+
+                    if i == 6:
+                        if marks_red[i] == 3:
+                            marks_red_text += f'{constants.mark_3_red} **BULL**\n'
+                        elif marks_red[i] == 2:
+                            marks_red_text += f'{constants.mark_2_red} **BULL**\n'
+                        elif marks_red[i] == 1:
+                            marks_red_text += f'{constants.mark_1_red} **BULL**\n'
+                        else:
+                            marks_red_text += f'{constants.mark_0_red} **BULL**\n'
+                    else:
+                        if marks_red[i] == 3:
+                            marks_red_text += f'{constants.mark_3_red} **{20 - i}**\n'
+                        elif marks_red[i] == 2:
+                            marks_red_text += f'{constants.mark_2_red} **{20 - i}**\n'
+                        elif marks_red[i] == 1:
+                            marks_red_text += f'{constants.mark_1_red} **{20 - i}**\n'
+                        else:
+                            marks_red_text += f'{constants.mark_0_red} **{20 - i}**\n'
 
                 for score in scores:
                     if score[1] == 'BULL':
@@ -325,6 +880,9 @@ async def message_create(client, message):
                     elif score[1] == 'OUT':
                         round_marks += 0
                         round_marks_text += f'{constants.mark_0_red}'
+
+                        if full_open_flag == True:
+                            ignore_darts += 1
 
                     elif score[0] == '' or score[0] == 'S':
                         if int(score[1]) >= 15:
@@ -356,7 +914,7 @@ async def message_create(client, message):
                     elif score[0] == 'T':
                         if int(score[1]) >= 15:
                             round_marks += 3
-                            round_marks_text += f'{constants.mark_3_red} '
+                            round_marks_text += f'{constants.mark_3_red}'
                             if marks_red[20 - int(score[1])] == 3:
                                 round_score += int(score[1]) * 3
                             elif marks_red[20 - int(score[1])] == 2:
@@ -370,26 +928,6 @@ async def message_create(client, message):
                         else:
                             round_marks += 0
                             round_marks_text += f'{constants.mark_0_red}'
-
-                for i in range(0, 7):
-                    if i == 6:
-                        if marks_red[i] == 3:
-                            marks_red_text += f'{constants.mark_3_red} **BULL**\n'
-                        elif marks_red[i] == 2:
-                            marks_red_text += f'{constants.mark_2_red} **BULL**\n'
-                        elif marks_red[i] == 1:
-                            marks_red_text += f'{constants.mark_1_red} **BULL**\n'
-                        else:
-                            marks_red_text += f'{constants.mark_0_red} **BULL**\n'
-                    else:
-                        if marks_red[i] == 3:
-                            marks_red_text += f'{constants.mark_3_red} **{20 - i}**\n'
-                        elif marks_red[i] == 2:
-                            marks_red_text += f'{constants.mark_2_red} **{20 - i}**\n'
-                        elif marks_red[i] == 1:
-                            marks_red_text += f'{constants.mark_1_red} **{20 - i}**\n'
-                        else:
-                            marks_red_text += f'{constants.mark_0_red} **{20 - i}**\n'
 
                 embed.description = marks_red_text
 
@@ -414,17 +952,20 @@ async def message_create(client, message):
                             new_field_value += f'**R{round_data[0]}** {round_marks_text} [{round_score}] {round_score_text}\n'
                             score_added_flag = True
 
-                for i in range(current_round + 1, 13):
+                for i in range(current_round + 1, 16):
                     new_field_value += f'**R{i:02}**\n'
 
                 new_field_value += '\n'
 
-                if current_round == 15:
+                if current_round == 15 or full_open_flag == True:
                     new_field_value += 'Stats [ESTABLISHED]\n'
-                    new_field_value += f'**MPR** {current_marks / current_round:.2f} **MPD** {current_marks / (current_round * 3):.2f} **Rt** 0.00'
+                    new_field_value += f'**MPR** {current_marks / current_round:.2f} **MPD** {current_marks / ((current_round * 3) - ignore_darts):.2f} **Rt** 0.00'
+
+                    embed.fields[0].name = embed.fields[0].name.replace('🎯 ', '')
+                    gameover_flag = True
                 else:
                     new_field_value += 'Stats [REALTIME]\n'
-                    new_field_value += f'**MPR** {current_marks / current_round:.2f} **MPD** {current_marks / (current_round * 3):.2f} **Rt** 0.00'
+                    new_field_value += f'**MPR** {current_marks / current_round:.2f} **MPD** {current_marks / ((current_round * 3) - ignore_darts):.2f} **Rt** 0.00'
 
                 embed.fields[0].value = new_field_value
 
@@ -435,9 +976,13 @@ async def message_create(client, message):
                 previous_score = int(field_name[2].replace('[', '').replace(']', ''))
                 current_score = previous_score - round_score
                 bust_flag = False
+                ignore_darts = 0
 
                 if current_score < 0:
                     bust_flag = True
+
+                if current_score == 0:
+                    ignore_darts = len(re.findall(r'(OUT)', round_score_text))
 
                 if bust_flag == False:
                     embed.fields[0].name = f'🎯 {player_name} [{current_score}]'
@@ -484,7 +1029,7 @@ async def message_create(client, message):
                         if bust_flag == True:
                             new_field_value += f'{stats[0]}\n'
                         else:
-                            new_field_value += f'**PPR** {(target_score - current_score) / current_round:.2f} **PPD** {(target_score - current_score) / (current_round * 3):.2f} **Rt** 0.00\n'
+                            new_field_value += f'**PPR** {(target_score - current_score) / current_round:.2f} **PPD** {(target_score - current_score) / ((current_round * 3) - ignore_darts):.2f} **Rt** 0.00\n'
                 else:
                     if current_score == 0:
                         new_field_value += '80% (12R) Stats [ESTABLISHED]\n'
@@ -494,17 +1039,20 @@ async def message_create(client, message):
                     if bust_flag == True:
                         new_field_value += f'{stats[0]}\n'
                     else:
-                        new_field_value += f'**PPR** {(target_score - current_score) / current_round:.2f} **PPD** {(target_score - current_score) / (current_round * 3):.2f} **Rt** 0.00\n'
+                        new_field_value += f'**PPR** {(target_score - current_score) / current_round:.2f} **PPD** {(target_score - current_score) / ((current_round * 3) - ignore_darts):.2f} **Rt** 0.00\n'
 
                 new_field_value += '\n'
 
-                if current_round == 15:
+                if current_round == 15 or current_score == 0:
                     new_field_value += '100% (15R) Stats [ESTABLISHED]\n'
 
                     if bust_flag == True:
                         new_field_value += f'{stats[1]}\n'
                     else:
-                        new_field_value += f'**PPR** {(target_score - current_score) / current_round:.2f} **PPD** {(target_score - current_score) / (current_round * 3):.2f} **Rt** 0.00\n'
+                        new_field_value += f'**PPR** {(target_score - current_score) / current_round:.2f} **PPD** {(target_score - current_score) / ((current_round * 3) - ignore_darts):.2f} **Rt** 0.00\n'
+                    
+                    embed.fields[0].name = embed.fields[0].name.replace('🎯 ', '')
+                    gameover_flag = True
                 else:
                     if current_score == 0:
                         new_field_value += '100% (15R) Stats [ESTABLISHED]\n'
@@ -514,13 +1062,9 @@ async def message_create(client, message):
                     if bust_flag == True:
                         new_field_value += f'{stats[1]}\n'
                     else:
-                        new_field_value += f'**PPR** {(target_score - current_score) / current_round:.2f} **PPD** {(target_score - current_score) / (current_round * 3):.2f} **Rt** 0.00\n'
+                        new_field_value += f'**PPR** {(target_score - current_score) / current_round:.2f} **PPD** {(target_score - current_score) / ((current_round * 3) - ignore_darts):.2f} **Rt** 0.00\n'
 
                 embed.fields[0].value = new_field_value
-
-                if current_round == 15 or current_score == 0:
-                    embed.fields[0].name = embed.fields[0].name.replace('🎯 ', '')
-                    gameover_flag = True
 
         await client.message_delete(message)
         await client.message_edit(previous_message, embed = embed)
