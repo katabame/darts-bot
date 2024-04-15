@@ -1,7 +1,11 @@
 from hata import Activity, ActivityType, Emoji, BUILTIN_EMOJIS, Client, Embed, now_as_id, wait_for_interruption
+from hata.ext.plugin_loader import add_default_plugin_variables, register_and_load_plugin
+
 from random import choice
 import json
 import re
+
+import constants
 
 ## Config
 with open('config.json', 'r') as f:
@@ -14,95 +18,10 @@ Satori = Client(
     activity = Activity('ダーツ', activity_type = ActivityType.competing)
 )
 
-count_up_stats = """
-**R01**
-**R02**
-**R03**
-**R04**
-**R05**
-**R06**
-**R07**
-**R08**
-
-75% (6R) Stats [REALTIME]
-**PPR** 0.00 **PPD** 0.00 **Rt** 0.00
-
-100% (8R) Stats [REALTIME]
-**PPR** 0.00 **PPD** 0.00 **Rt** 0.00
-"""
-
-zero_one_stats = """
-**R01**
-**R02**
-**R03**
-**R04**
-**R05**
-**R06**
-**R07**
-**R08**
-**R09**
-**R10**
-**R11**
-**R12**
-**R13**
-**R14**
-**R15**
-
-80% (12R) Stats [REALTIME]
-**PPR** 0.00 **PPD** 0.00 **Rt** 0.00
-
-100% (15R) Stats [REALTIME]
-**PPR** 0.00 **PPD** 0.00 **Rt** 0.00
-"""
-
-cricket_stats = """
-**R01**
-**R02**
-**R03**
-**R04**
-**R05**
-**R06**
-**R07**
-**R08**
-**R09**
-**R10**
-**R11**
-**R12**
-**R13**
-**R14**
-**R15**
-
-80% (12R) Stats [REALTIME]
-**MPR** 0.00 **MPD** 0.00 **Rt** 0.00
-
-100% (15R) Stats [REALTIME]
-**MPR** 0.00 **MPD** 0.00 **Rt** 0.00
-"""
-
-cricket_marks_red_only = """
-<:0mark_red:1226200467969675451> **20**
-<:0mark_red:1226200467969675451> **19**
-<:0mark_red:1226200467969675451> **18**
-<:0mark_red:1226200467969675451> **17**
-<:0mark_red:1226200467969675451> **16**
-<:0mark_red:1226200467969675451> **15**
-<:0mark_red:1226200467969675451> **BULL**
-"""
-
-cricket_marks = """
-<:0mark_red:1226200467969675451> **20** <:0mark_blue:1226200393327968399>
-<:0mark_red:1226200467969675451> **19** <:0mark_blue:1226200393327968399>
-<:0mark_red:1226200467969675451> **18** <:0mark_blue:1226200393327968399>
-<:0mark_red:1226200467969675451> **17** <:0mark_blue:1226200393327968399>
-<:0mark_red:1226200467969675451> **16** <:0mark_blue:1226200393327968399>
-<:0mark_red:1226200467969675451> **15** <:0mark_blue:1226200393327968399>
-<:0mark_red:1226200467969675451> **BULL** <:0mark_blue:1226200393327968399>
-"""
-
-mark_0_red = Emoji.precreate(1226200467969675451)
-mark_1_red = Emoji.precreate(1226003807142678601)
-mark_2_red = Emoji.precreate(1226003861601259660)
-mark_3_red = Emoji.precreate(1226003903418470450)
+add_default_plugin_variables(Satori=Satori)
+#register_and_load_plugin('count-up')
+#register_and_load_plugin('cricket')
+#register_and_load_plugin('zero-one')
 
 ## Slash commands
 @Satori.interactions(guild = config['guildId'])
@@ -157,31 +76,31 @@ async def start(
     if game == 'cricket':
         embed.color = 0x3030ff
         embed.add_field(
-            name = f'🎯 {red} [0]',
-            value = cricket_stats,
+            name = f'🎯 {red} [0] (Total: 0 marks)',
+            value = constants.stats_cricket,
             inline = True
         )
-        embed.description = cricket_marks_red_only
+        embed.description = constants.marks_red_only
 
         if blue != None:
             embed.add_field(
-                name = f'{blue} [0]',
-                value= cricket_stats,
+                name = f'{blue} [0] (Total: 0 marks)',
+                value= constants.stats_cricket,
                 inline = True
             )
-            embed.description = cricket_marks
+            embed.description = constants.marks
 
     elif game == 'count-up':
         embed.color = 0x30ff30
         embed.add_field(
             name = f'🎯 {red} [0]',
-            value = count_up_stats,
+            value = constants.stats_countup,
             inline = True
         )
         if blue != None:
             embed.add_field(
                 name = f'{blue} [0]',
-                value= count_up_stats,
+                value= constants.stats_countup,
                 inline = True
             )
 
@@ -189,21 +108,21 @@ async def start(
         embed.color = 0xff3030
         embed.add_field(
             name = f'🎯 {red} [{game}]',
-            value = zero_one_stats,
+            value = constants.stats_01,
             inline = True
         )
         if blue != None:
             embed.add_field(
                 name = f'{blue} [{game}]',
-                value= zero_one_stats,
+                value= constants.stats_01,
                 inline = True
             )
 
     return embed
- 
+
 ## Events
 @Satori.events
-async def message_create(client, message):    
+async def message_create(client, message):
     previous_messages = await client.message_get_chunk(message.channel, before = message.id, limit = 1)
     previous_message = previous_messages[0]
     gameover_flag = False
@@ -254,8 +173,6 @@ async def message_create(client, message):
                     field_value = re.findall(r'^.+$', embed.fields[0].value, re.MULTILINE)
                     current_round = 1
                     new_field_value = ''
-                    stats = []
-                    stats_established_flag = False
 
                     score_added_flag = False
                     for value in field_value:
@@ -268,36 +185,17 @@ async def message_create(client, message):
                                 new_field_value += f'**R{round_data[0]}** [{round_score}] {round_score_text}\n'
                                 score_added_flag = True
 
-                        established = re.findall(r'75% \(6R\) Stats \[(REALTIME|ESTABLISHED)\]', value)
-                        if len(established) != 0 and established[0] == 'ESTABLISHED':
-                            stats_established_flag = True
-
-                        if value.startswith('**PP'):
-                            stats.append(value)
-
                     for i in range(current_round + 1, 9):
                         new_field_value += f'**R{i:02}**\n'
 
                     new_field_value += '\n'
 
-                    if current_round >= 6:
-                        new_field_value += '75% (6R) Stats [ESTABLISHED]\n'
-                        if stats_established_flag == True:
-                            new_field_value += f'{stats[0]}\n'
-                        else:
-                            new_field_value += f'**PPR** {current_score / current_round:.2f} **PPD** {current_score / (current_round * 3):.2f} **Rt** 0.00\n'
-                    else:
-                        new_field_value += '75% (6R) Stats [REALTIME]\n'
-                        new_field_value += f'**PPR** {current_score / current_round:.2f} **PPD** {current_score / (current_round * 3):.2f} **Rt** 0.00\n'
-                    
-                    new_field_value += '\n'
-
                     if current_round == 8:
-                        new_field_value += '100% (8R) Stats [ESTABLISHED]\n'
+                        new_field_value += 'Stats [ESTABLISHED]\n'
                         new_field_value += f'**PPR** {current_score / current_round:.2f} **PPD** {current_score / (current_round * 3):.2f} **Rt** 0.00\n'
                     else:
-                        new_field_value += '100% (8R) Stats [REALTIME]\n'
-                        new_field_value += f'**PPR** {current_score / current_round:.2f} **PPD** {current_score / (current_round * 3):.2f} **Rt** 0.00\n'                
+                        new_field_value += 'Stats [REALTIME]\n'
+                        new_field_value += f'**PPR** {current_score / current_round:.2f} **PPD** {current_score / (current_round * 3):.2f} **Rt** 0.00\n'
 
                     embed.fields[0].value = new_field_value
 
@@ -313,8 +211,6 @@ async def message_create(client, message):
                     field_value = re.findall(r'^.+$', embed.fields[1].value, re.MULTILINE)
                     current_round = 1
                     new_field_value = ''
-                    stats = []
-                    stats_established_flag = False
 
                     score_added_flag = False
                     for value in field_value:
@@ -327,36 +223,17 @@ async def message_create(client, message):
                                 new_field_value += f'**R{round_data[0]}** [{round_score}] {round_score_text}\n'
                                 score_added_flag = True
 
-                        established = re.findall(r'75% \(6R\) Stats \[(REALTIME|ESTABLISHED)\]', value)
-                        if len(established) != 0 and established[0] == 'ESTABLISHED':
-                            stats_established_flag = True
-
-                        if value.startswith('**PP'):
-                            stats.append(value)
-
                     for i in range(current_round + 1, 9):
                         new_field_value += f'**R{i:02}**\n'
 
                     new_field_value += '\n'
 
-                    if current_round >= 6:
-                        new_field_value += '75% (6R) Stats [ESTABLISHED]\n'
-                        if stats_established_flag == True:
-                            new_field_value += f'{stats[0]}\n'
-                        else:
-                            new_field_value += f'**PPR** {current_score / current_round:.2f} **PPD** {current_score / (current_round * 3):.2f} **Rt** 0.00\n'
-                    else:
-                        new_field_value += '75% (6R) Stats [REALTIME]\n'
-                        new_field_value += f'**PPR** {current_score / current_round:.2f} **PPD** {current_score / (current_round * 3):.2f} **Rt** 0.00\n'
-                    
-                    new_field_value += '\n'
-
                     if current_round == 8:
-                        new_field_value += '100% (8R) Stats [ESTABLISHED]\n'
+                        new_field_value += 'Stats [ESTABLISHED]\n'
                         new_field_value += f'**PPR** {current_score / current_round:.2f} **PPD** {current_score / (current_round * 3):.2f} **Rt** 0.00\n'
                     else:
-                        new_field_value += '100% (8R) Stats [REALTIME]\n'
-                        new_field_value += f'**PPR** {current_score / current_round:.2f} **PPD** {current_score / (current_round * 3):.2f} **Rt** 0.00\n'                
+                        new_field_value += 'Stats [REALTIME]\n'
+                        new_field_value += f'**PPR** {current_score / current_round:.2f} **PPD** {current_score / (current_round * 3):.2f} **Rt** 0.00\n'
 
                     embed.fields[1].value = new_field_value
 
@@ -382,8 +259,6 @@ async def message_create(client, message):
                 field_value = re.findall(r'^.+$', embed.fields[0].value, re.MULTILINE)
                 current_round = 1
                 new_field_value = ''
-                stats = []
-                stats_established_flag = False
 
                 score_added_flag = False
                 for value in field_value:
@@ -396,36 +271,17 @@ async def message_create(client, message):
                             new_field_value += f'**R{round_data[0]}** [{round_score}] {round_score_text}\n'
                             score_added_flag = True
 
-                    established = re.findall(r'75% \(6R\) Stats \[(REALTIME|ESTABLISHED)\]', value)
-                    if len(established) != 0 and established[0] == 'ESTABLISHED':
-                        stats_established_flag = True
-
-                    if value.startswith('**PP'):
-                        stats.append(value)
-
                 for i in range(current_round + 1, 9):
                     new_field_value += f'**R{i:02}**\n'
 
                 new_field_value += '\n'
 
-                if current_round >= 6:
-                    new_field_value += '75% (6R) Stats [ESTABLISHED]\n'
-                    if stats_established_flag == True:
-                        new_field_value += f'{stats[0]}\n'
-                    else:
-                        new_field_value += f'**PPR** {current_score / current_round:.2f} **PPD** {current_score / (current_round * 3):.2f} **Rt** 0.00\n'
-                else:
-                    new_field_value += '75% (6R) Stats [REALTIME]\n'
-                    new_field_value += f'**PPR** {current_score / current_round:.2f} **PPD** {current_score / (current_round * 3):.2f} **Rt** 0.00\n'
-                
-                new_field_value += '\n'
-
                 if current_round == 8:
-                    new_field_value += '100% (8R) Stats [ESTABLISHED]\n'
+                    new_field_value += 'Stats [ESTABLISHED]\n'
                     new_field_value += f'**PPR** {current_score / current_round:.2f} **PPD** {current_score / (current_round * 3):.2f} **Rt** 0.00\n'
                 else:
-                    new_field_value += '100% (8R) Stats [REALTIME]\n'
-                    new_field_value += f'**PPR** {current_score / current_round:.2f} **PPD** {current_score / (current_round * 3):.2f} **Rt** 0.00\n'                
+                    new_field_value += 'Stats [REALTIME]\n'
+                    new_field_value += f'**PPR** {current_score / current_round:.2f} **PPD** {current_score / (current_round * 3):.2f} **Rt** 0.00\n'
 
                 embed.fields[0].value = new_field_value
 
@@ -438,9 +294,8 @@ async def message_create(client, message):
                 round_marks = 0
                 round_marks_text = ''
                 marks_red = [] # 20:0, 19:1, 18:2, 17:3, 16:4, 15:5, BULL:6
+                marks_red_text = ''
                 current_round = 1
-                stats = []
-                stats_established_flag = False
 
                 target_marks = re.findall(r'^.+$', embed.description, re.MULTILINE)
                 for target_mark in target_marks:
@@ -451,7 +306,7 @@ async def message_create(client, message):
                     if score[1] == 'BULL':
                         if score[0] == 'D':
                             round_marks += 2
-                            round_marks_text += '<:2mark_red:1226003861601259660> '
+                            round_marks_text += f'{constants.mark_2_red}'
                             if marks_red[6] == 3:
                                 round_score += 50
                             elif marks_red[6] == 2:
@@ -461,7 +316,7 @@ async def message_create(client, message):
                                 marks_red[6] += 2
                         else:
                             round_marks += 1
-                            round_marks_text += '<:1mark_red:1226003807142678601> '
+                            round_marks_text += f'{constants.mark_1_red}'
                             if marks_red[6] == 3:
                                 round_score += 25
                             else:
@@ -469,24 +324,24 @@ async def message_create(client, message):
 
                     elif score[1] == 'OUT':
                         round_marks += 0
-                        round_marks_text += '<:0mark_red:1226200467969675451> '
+                        round_marks_text += f'{constants.mark_0_red}'
 
                     elif score[0] == '' or score[0] == 'S':
                         if int(score[1]) >= 15:
                             round_marks += 1
-                            round_marks_text += '<:1mark_red:1226003807142678601> '
+                            round_marks_text += f'{constants.mark_1_red}'
                             if marks_red[20 - int(score[1])] == 3:
                                 round_score += int(score[1])
                             else:
                                 marks_red[20 - int(score[1])] += 1
                         else:
                             round_marks += 0
-                            round_marks_text += '<:0mark_red:1226200467969675451> '
+                            round_marks_text += f'{constants.mark_0_red}'
 
                     elif score[0] == 'D':
                         if int(score[1]) >= 15:
                             round_marks += 2
-                            round_marks_text += '<:2mark_red:1226003861601259660> '
+                            round_marks_text += f'{constants.mark_2_red}'
                             if marks_red[20 - int(score[1])] == 3:
                                 round_score += int(score[1]) * 2
                             elif marks_red[20 - int(score[1])] == 2:
@@ -496,12 +351,12 @@ async def message_create(client, message):
                                 marks_red[20 - int(score[1])] += 2
                         else:
                             round_marks += 0
-                            round_marks_text += '<:0mark_red:1226200467969675451> '
+                            round_marks_text += f'{constants.mark_0_red}'
 
                     elif score[0] == 'T':
                         if int(score[1]) >= 15:
                             round_marks += 3
-                            round_marks_text += f'{mark_3_red} '
+                            round_marks_text += f'{constants.mark_3_red} '
                             if marks_red[20 - int(score[1])] == 3:
                                 round_score += int(score[1]) * 3
                             elif marks_red[20 - int(score[1])] == 2:
@@ -514,7 +369,37 @@ async def message_create(client, message):
                                 marks_red[20 - int(score[1])] += 3
                         else:
                             round_marks += 0
-                            round_marks_text += '<:0mark_red:1226200467969675451> '
+                            round_marks_text += f'{constants.mark_0_red}'
+
+                for i in range(0, 7):
+                    if i == 6:
+                        if marks_red[i] == 3:
+                            marks_red_text += f'{constants.mark_3_red} **BULL**\n'
+                        elif marks_red[i] == 2:
+                            marks_red_text += f'{constants.mark_2_red} **BULL**\n'
+                        elif marks_red[i] == 1:
+                            marks_red_text += f'{constants.mark_1_red} **BULL**\n'
+                        else:
+                            marks_red_text += f'{constants.mark_0_red} **BULL**\n'
+                    else:
+                        if marks_red[i] == 3:
+                            marks_red_text += f'{constants.mark_3_red} **{20 - i}**\n'
+                        elif marks_red[i] == 2:
+                            marks_red_text += f'{constants.mark_2_red} **{20 - i}**\n'
+                        elif marks_red[i] == 1:
+                            marks_red_text += f'{constants.mark_1_red} **{20 - i}**\n'
+                        else:
+                            marks_red_text += f'{constants.mark_0_red} **{20 - i}**\n'
+
+                embed.description = marks_red_text
+
+                field_name = embed.fields[0].name.split()
+                player_name = field_name[1]
+                current_score = int(field_name[2].replace('[', '').replace(']', ''))
+                current_score += round_score
+                current_marks = int(field_name[4])
+                current_marks += round_marks
+                embed.fields[0].name = f'🎯 {player_name} [{current_score}] (Total: {current_marks} marks)'
 
                 field_value = re.findall(r'^.+$', embed.fields[0].value, re.MULTILINE)
                 new_field_value = ''
@@ -526,23 +411,22 @@ async def message_create(client, message):
                             new_field_value += f'**R{round_data[0]}** {round_data[1]}\n'
                         elif score_added_flag == False:
                             current_round = int(round_data[0])
-                            new_field_value += f'**R{round_data[0]}** [{round_marks_text}]({round_score}) {round_score_text}\n'
+                            new_field_value += f'**R{round_data[0]}** {round_marks_text} [{round_score}] {round_score_text}\n'
                             score_added_flag = True
-
-                    established = re.findall(r'80% \(12R\) Stats \[(REALTIME|ESTABLISHED)\]', value)
-                    if len(established) != 0 and established[0] == 'ESTABLISHED':
-                        stats_established_flag = True
-
-                    if value.startswith('**PP'):
-                        stats.append(value)
 
                 for i in range(current_round + 1, 13):
                     new_field_value += f'**R{i:02}**\n'
 
                 new_field_value += '\n'
 
-                embed.fields[0].value = new_field_value
+                if current_round == 15:
+                    new_field_value += 'Stats [ESTABLISHED]\n'
+                    new_field_value += f'**MPR** {current_marks / current_round:.2f} **MPD** {current_marks / (current_round * 3):.2f} **Rt** 0.00'
+                else:
+                    new_field_value += 'Stats [REALTIME]\n'
+                    new_field_value += f'**MPR** {current_marks / current_round:.2f} **MPD** {current_marks / (current_round * 3):.2f} **Rt** 0.00'
 
+                embed.fields[0].value = new_field_value
 
             else:
                 target_score = int(embed.author.name)
@@ -592,7 +476,7 @@ async def message_create(client, message):
 
                 new_field_value += '\n'
 
-                if current_round >= 12:
+                if int(target_score * 0.2) > current_score:
                     new_field_value += '80% (12R) Stats [ESTABLISHED]\n'
                     if stats_established_flag == True:
                         new_field_value += f'{stats[0]}\n'
@@ -611,7 +495,7 @@ async def message_create(client, message):
                         new_field_value += f'{stats[0]}\n'
                     else:
                         new_field_value += f'**PPR** {(target_score - current_score) / current_round:.2f} **PPD** {(target_score - current_score) / (current_round * 3):.2f} **Rt** 0.00\n'
-                
+
                 new_field_value += '\n'
 
                 if current_round == 15:
@@ -630,7 +514,7 @@ async def message_create(client, message):
                     if bust_flag == True:
                         new_field_value += f'{stats[1]}\n'
                     else:
-                        new_field_value += f'**PPR** {(target_score - current_score) / current_round:.2f} **PPD** {(target_score - current_score) / (current_round * 3):.2f} **Rt** 0.00\n'                
+                        new_field_value += f'**PPR** {(target_score - current_score) / current_round:.2f} **PPD** {(target_score - current_score) / (current_round * 3):.2f} **Rt** 0.00\n'
 
                 embed.fields[0].value = new_field_value
 
