@@ -279,9 +279,9 @@ async def message_create(client, message):
 
                     target_marks = re.findall(r'^.+$', embed.description, re.MULTILINE)
                     for target_mark in target_marks:
-                        mark_red = re.findall(r'.*([0-3])mark_red.*', target_mark)
+                        mark_red = re.findall(r'.*([0-3])marks_red.*', target_mark)
                         marks_red.append(int(mark_red[0]))
-                        mark_blue = re.findall(r'.*([0-3])mark_blue.*', target_mark)
+                        mark_blue = re.findall(r'.*([0-3])marks_blue.*', target_mark)
                         marks_blue.append(int(mark_blue[0]))
 
                     for i in range(0, 7):
@@ -554,9 +554,9 @@ async def message_create(client, message):
 
                     target_marks = re.findall(r'^.+$', embed.description, re.MULTILINE)
                     for target_mark in target_marks:
-                        mark_red = re.findall(r'.*([0-3])mark_red.*', target_mark)
+                        mark_red = re.findall(r'.*([0-3])marks_red.*', target_mark)
                         marks_red.append(int(mark_red[0]))
-                        mark_blue = re.findall(r'.*([0-3])mark_blue.*', target_mark)
+                        mark_blue = re.findall(r'.*([0-3])marks_blue.*', target_mark)
                         marks_blue.append(int(mark_blue[0]))
 
                     for i in range(0, 7):
@@ -695,7 +695,7 @@ async def message_create(client, message):
                         if i == 6:
                             if marks_blue[i] == 3:
                                 if marks_red[i] == 3:
-                                    marks_text += f'{constants.mark_3_red} ~~**BULL**~~ {constants.mark_3_blue}\n'
+                                    marks_text += f'{constants.mark_3_red_close} ~~**BULL**~~ {constants.mark_3_blue_close}\n'
                                 elif marks_red[i] == 2:
                                     marks_text += f'{constants.mark_2_red} **BULL** {constants.mark_3_blue}\n'
                                 elif marks_red[i] == 1:
@@ -735,7 +735,7 @@ async def message_create(client, message):
                         else:
                             if marks_blue[i] == 3:
                                 if marks_red[i] == 3:
-                                    marks_text += f'{constants.mark_3_red} ~~**{20 - i}**~~ {constants.mark_3_blue}\n'
+                                    marks_text += f'{constants.mark_3_red_close} ~~**{20 - i}**~~ {constants.mark_3_blue_close}\n'
                                 elif marks_red[i] == 2:
                                     marks_text += f'{constants.mark_2_red} **{20 - i}** {constants.mark_3_blue}\n'
                                 elif marks_red[i] == 1:
@@ -1067,31 +1067,12 @@ async def message_create(client, message):
 
                 target_marks = re.findall(r'^.+$', embed.description, re.MULTILINE)
                 for target_mark in target_marks:
-                    mark = re.findall(r'.*([0-3])mark_red.*', target_mark)
+                    mark = re.findall(r'.*([0-3])marks_red.*', target_mark)
                     marks_red.append(int(mark[0]))
 
                 for i in range(0, 7):
                     if marks_red[i] != 3:
                         full_open_flag = False
-
-                    if i == 6:
-                        if marks_red[i] == 3:
-                            marks_red_text += f'{constants.mark_3_red} **BULL**\n'
-                        elif marks_red[i] == 2:
-                            marks_red_text += f'{constants.mark_2_red} **BULL**\n'
-                        elif marks_red[i] == 1:
-                            marks_red_text += f'{constants.mark_1_red} **BULL**\n'
-                        else:
-                            marks_red_text += f'{constants.mark_0_red} **BULL**\n'
-                    else:
-                        if marks_red[i] == 3:
-                            marks_red_text += f'{constants.mark_3_red} **{20 - i}**\n'
-                        elif marks_red[i] == 2:
-                            marks_red_text += f'{constants.mark_2_red} **{20 - i}**\n'
-                        elif marks_red[i] == 1:
-                            marks_red_text += f'{constants.mark_1_red} **{20 - i}**\n'
-                        else:
-                            marks_red_text += f'{constants.mark_0_red} **{20 - i}**\n'
 
                 for score in scores:
                     if score[1] == 'BULL':
@@ -1164,6 +1145,26 @@ async def message_create(client, message):
                         else:
                             round_marks += 0
                             round_marks_text += f'{constants.mark_0_red}'
+
+                for i in range(0, 7):
+                    if i == 6:
+                        if marks_red[i] == 3:
+                            marks_red_text += f'{constants.mark_3_red} **BULL**\n'
+                        elif marks_red[i] == 2:
+                            marks_red_text += f'{constants.mark_2_red} **BULL**\n'
+                        elif marks_red[i] == 1:
+                            marks_red_text += f'{constants.mark_1_red} **BULL**\n'
+                        else:
+                            marks_red_text += f'{constants.mark_0_red} **BULL**\n'
+                    else:
+                        if marks_red[i] == 3:
+                            marks_red_text += f'{constants.mark_3_red} **{20 - i}**\n'
+                        elif marks_red[i] == 2:
+                            marks_red_text += f'{constants.mark_2_red} **{20 - i}**\n'
+                        elif marks_red[i] == 1:
+                            marks_red_text += f'{constants.mark_1_red} **{20 - i}**\n'
+                        else:
+                            marks_red_text += f'{constants.mark_0_red} **{20 - i}**\n'
 
                 embed.description = marks_red_text
 
