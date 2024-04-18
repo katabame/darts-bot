@@ -420,7 +420,7 @@ async def message_create(client, message):
                         if i == 6:
                             if marks_red[i] == 3:
                                 if marks_blue[i] == 3:
-                                    marks_text += f'{constants.mark_3_red} ~~**BULL**~~ {constants.mark_3_blue}\n'
+                                    marks_text += f'{constants.mark_3_red_close} ~~**BULL**~~ {constants.mark_3_blue_close}\n'
                                 elif marks_blue[i] == 2:
                                     marks_text += f'{constants.mark_3_red} **BULL** {constants.mark_2_blue}\n'
                                 elif marks_blue[i] == 1:
@@ -460,7 +460,7 @@ async def message_create(client, message):
                         else:
                             if marks_red[i] == 3:
                                 if marks_blue[i] == 3:
-                                    marks_text += f'{constants.mark_3_red} ~~**{20 - i}**~~ {constants.mark_3_blue}\n'
+                                    marks_text += f'{constants.mark_3_red_close} ~~**{20 - i}**~~ {constants.mark_3_blue_close}\n'
                                 elif marks_blue[i] == 2:
                                     marks_text += f'{constants.mark_3_red} **{20 - i}** {constants.mark_2_blue}\n'
                                 elif marks_blue[i] == 1:
