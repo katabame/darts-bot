@@ -140,13 +140,25 @@ async def delete_channel(
 
     if re.fullmatch(r'^darts\-[a-zA-Z0-9]{5}$', target_channel.name):
         await Satori.channel_delete(target_channel)
-        yield f'#{target_channel.name} を削除しました'
+        if event.channel != target_channel:
+            yield f'#{target_channel.name} を削除しました'
     else:
         yield f'#{target_channel.name} は削除対象チャンネルではありません'
+
+@Satori.interactions(guild = config['guildId'])
+async def cointoss(
+    event,
+    head: ('str', '表の選択肢を入力してください'),
+    tail: ('str', '裏の選択肢を入力してください')
+):
+    return choice([head, tail])
 
 ## Events
 @Satori.events
 async def message_create(client, message):
+    if re.fullmatch(r'^darts\-[a-zA-Z0-9]{5}$', message.channel.name) == None:
+        return
+
     previous_messages = await client.message_get_chunk(message.channel, before = message.id, limit = 1)
     previous_message = previous_messages[0]
     gameover_flag = False
