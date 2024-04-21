@@ -25,7 +25,7 @@ def create_embed(embed: hata.Embed, scores: list[list[str]]) -> tuple[hata.Embed
     stats_text, current_score, current_round, current_mark, marks_red, marks_blue = generate_stats(current_score, scores, total_rounds, field_value, current_mark, marks_red, marks_blue, turn_index)
     embed.fields[turn_index].value = stats_text
     embed.description = generate_marks_text(marks_red, marks_blue)
-    embed.fields[turn_index].name = f'{'' if len(embed.fields) == 2 else '🎯 '}{player_name} [{current_score}] (Total: {current_mark} marks)'
+    embed.fields[turn_index].name = f'{"" if len(embed.fields) == 2 else "🎯 "}{player_name} [{current_score}] (Total: {current_mark} marks)'
     if len(embed.fields) == 2:
         embed.fields[1 - turn_index].name = f'🎯 {embed.fields[1 - turn_index].name}'
 
@@ -68,7 +68,7 @@ def generate_stats(current_score:int, scores: list[list[str]], total_rounds:int,
         stats_text += f'**R{i:02}**\n'
 
     stats_text += '\n'
-    stats_text += f'Stats [{'ESTABLISHED' if current_round == total_rounds else 'REALTIME'}]\n'
+    stats_text += f'Stats [{"ESTABLISHED" if current_round == total_rounds else "REALTIME"}]\n'
     stats_text += f'**MPR** {current_mark / current_round:.2f} **MPD** {current_mark / (current_round * 3 - ignore_darts):.2f} **Rt** 0.00\n'
 
     return stats_text, current_score, current_round, current_mark, marks_red, marks_blue

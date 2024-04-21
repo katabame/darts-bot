@@ -14,7 +14,7 @@ def create_embed(embed: hata.Embed, scores: list[list[str]]) -> tuple[hata.Embed
     stats_text, current_score, current_round = generate_stats(current_score, scores, total_rounds, field_value, target_score)
     embed.fields[turn_index].value = stats_text
 
-    embed.fields[turn_index].name = f'{'' if len(embed.fields) == 2 else '🎯 '}{player_name} [{current_score}]'
+    embed.fields[turn_index].name = f'{"" if len(embed.fields) == 2 else "🎯 "}{player_name} [{current_score}]'
     if len(embed.fields) == 2:
         embed.fields[1 - turn_index].name = f'🎯 {embed.fields[1 - turn_index].name}'
 
@@ -57,10 +57,10 @@ def generate_stats(current_score:int, scores: list[list[str]], total_rounds:int,
         stats_text += f'**R{i:02}**\n'
 
     stats_text += '\n'
-    stats_text += f'80% Stats [{'ESTABLISHED' if established else 'REALTIME'}]\n'
+    stats_text += f'80% Stats [{"ESTABLISHED" if established else "REALTIME"}]\n'
     stats_text += f'{stats[0]}\n' if established or busted else f'**PPR** {(target_score - current_score) / current_round:.2f} **PPD** {(target_score - current_score) / (current_round * 3 - ignore_darts):.2f} **Rt** 0.00\n'
     stats_text += '\n'
-    stats_text += f'100% Stats [{'ESTABLISHED' if current_round == total_rounds else 'REALTIME'}]\n'
+    stats_text += f'100% Stats [{"ESTABLISHED" if current_round == total_rounds else "REALTIME"}]\n'
     stats_text += f'{stats[1]}\n' if busted else f'**PPR** {(target_score - current_score) / current_round:.2f} **PPD** {(target_score - current_score) / (current_round * 3 - ignore_darts):.2f} **Rt** 0.00\n'
 
     return stats_text, current_score, current_round
