@@ -24,9 +24,6 @@ def generate_stats(current_score:int, scores: list[list[str]], total_rounds:int,
     stats_text = ''
     current_round = 1
     score_added = False
-    gameover = False
-    #established = False
-    #stats = []
     round_score, score_text = utils.calculate_score(scores)
     current_score += round_score
 
@@ -39,10 +36,6 @@ def generate_stats(current_score:int, scores: list[list[str]], total_rounds:int,
                 current_round = int(datum[0])
                 score_added = True
                 stats_text += f'**R{current_round:02}** [{round_score}] {score_text}\n'
-            #est = re.findall(r'Stats \[(REALTIME|ESTABLISHED)\]', value)
-            #established = est[0] == 'ESTABLISHED'
-            #if value.startwith('**PP'):
-            #    stats.append(value)
 
     for i in range(current_round + 1, total_rounds + 1):
         stats_text += f'**R{i:02}**\n'

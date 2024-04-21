@@ -1,4 +1,4 @@
-from hata import Activity, ActivityType, Emoji, BUILTIN_EMOJIS, Client, Embed, now_as_id, wait_for_interruption
+from hata import Activity, ActivityType, BUILTIN_EMOJIS, Client, wait_for_interruption
 
 from random import choice, choices
 from string import ascii_letters, digits
@@ -40,7 +40,8 @@ async def start(
         name = f'darts-{"".join(choices(ascii_letters + digits, k = 5))}'
     )
     await Satori.message_create(channel, utils.create_start_message(red, blue))
-    await Satori.message_create(channel, embed = embed)
+    message = await Satori.message_create(channel, embed = embed)
+    await Satori.reaction_add(message, BUILTIN_EMOJIS['white_check_mark'])
     yield f'専用チャンネル #{channel.name} を作成しました！ HAVE A NICE DARTS!'
 
 @Satori.interactions(guild = config['guildId'], show_for_invoking_user_only = True)
@@ -95,9 +96,9 @@ async def message_create(client, message):
             if len(embed.fields) == 2:
                 new_embed.fields[1].value = new_embed.fields[1].value.replace('REALTIME', 'ESTABLISHED')
                 new_embed.fields[1].name = new_embed.fields[1].name.replace('🎯 ', '')
-            await client.message_create(message.channel, 'GAME OVER!')
-        
+
         await client.message_edit(previous_message, embed = new_embed)
+        await client.reaction_add(previous_message, BUILTIN_EMOJIS['tada'] if is_gameover else BUILTIN_EMOJIS['white_check_mark'])
 
 ## Start
 @Satori.events
