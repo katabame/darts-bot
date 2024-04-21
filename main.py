@@ -85,7 +85,7 @@ async def message_create(client, message):
         else:
             if embed.author.name.startswith('COUNT-UP'):
                 new_embed, is_gameover = count_up.create_embed(embed, scores)
-            elif embed.author.name == 'STANDARD CRICKET':
+            elif embed.author.name.startswith('STANDARD CRICKET'):
                 new_embed, is_gameover = standard_cricket.create_embed(embed, scores)
             else:
                 new_embed, is_gameover = zero_one.create_embed(embed, scores)

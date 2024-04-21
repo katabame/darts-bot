@@ -2,15 +2,6 @@ import hata
 import random
 import constants
 
-#def cointoss(head: str | hata.User, tail: str | hata.User) -> tuple[str | hata.User]:
-#    coin = [head, tail]
-#    win = random.choise(coin)
-#    print('win', win)
-#    coin.remove(win)
-#    lose = coin[0]
-#    print(win, lose)
-#    return win, lose
-
 def create_start_message(red: hata.User, blue: hata.User | None) -> str:
     if blue is None:
         return f'<@{red.id}> GAME ON!'
@@ -69,9 +60,6 @@ def determine_teams(event_user: hata.User, player1: hata.User | None, player2: h
         else:
             return player1, player2
 
-#def is_round_over(current_round: int, total_round: int, is_solo: bool = False, is_blue_turn: bool = False) -> bool:
-#    return current_round >= total_round and (is_solo or is_blue_turn)
-
 def calculate_score(scores: list[list[str]], separate_bull: bool = False) -> tuple[int, str]:
     total_score: int = 0
     score_text: str = ''
@@ -92,3 +80,64 @@ def calculate_score(scores: list[list[str]], separate_bull: bool = False) -> tup
             total_score += int(score[1] * multiplier)
 
     return total_score, score_text
+
+def calculate_mark(scores: list[list[str]], marks_red: list[int], marks_blue: list[int] | None, turn_index: int):
+    total_score: int = 0
+    total_mark: int = 0
+    mark_text = ''
+
+    marks_ally = marks_red if turn_index == 0 else marks_blue
+    marks_opponent = marks_blue if turn_index == 0 else marks_red
+
+    for score in scores:
+        if score[1] == 'BULL':
+            if score[0] == 'D':
+                if len(marks_opponent) > 0 and marks_opponent[6] == 3:
+                    mark = 0 if marks_ally[6] == 3 else 1 if marks_ally[6] == 2 else 2
+                else:
+                    mark = 2
+                    total_score += 50 if marks_ally[6] == 3 else 25 if marks_ally[6] == 2 else 0
+            else:
+                if len(marks_opponent) > 0 and marks_opponent[6] == 3:
+                    mark = 0 if marks_ally[6] == 3 else 1
+                else:
+                    mark = 1
+                    total_score += 25 if marks_ally[6] == 3 else 0
+            marks_ally[6] += mark
+        elif score[1] == 'OUT':
+            mark = 0
+        else:
+            if int(score[1]) < 15:
+                mark = 0
+            else:
+                score_index = 20 - int(score[1])
+                multiplier: int = 3 if score[0] == 'T' else 2 if score[0] == 'D' else 1\
+
+                if len(marks_opponent) > 0 and marks_opponent[score_index] == 3:
+                    if multiplier == 3:
+                        mark = 0 if marks_ally[score_index] == 3 else 1 if marks_ally[score_index] == 2 else 2 if marks_ally[score_index] == 1 else multiplier
+                    else:
+                        mark = 0 if marks_ally[score_index] == 3 else 1 if marks_ally[score_index] == 2 else multiplier
+                else:
+                    mark = multiplier
+                    if multiplier == 3:
+                        total_score += multiplier * int(score[1]) if marks_ally[score_index] == 3 else 2 * int(score[1]) if marks_ally[score_index] == 2 else 1 * int(score[1]) if marks_ally[score_index] == 1 else 0
+                    elif multiplier == 2:
+                        total_score += multiplier * int(score[1]) if marks_ally[score_index] == 3 else 1 * int(score[1]) if marks_ally[score_index] == 2 else 0
+                    else:
+                        total_score += multiplier * int(score[1]) if marks_ally[score_index] == 3 else 0
+                marks_ally[score_index] = min(marks_ally[score_index] + mark, 3)
+        total_mark += mark
+        
+        if mark == 0:
+            mark_text += '0 '
+        elif mark == 1:
+            mark_text += '1 '
+        elif mark == 2:
+            mark_text += '2 '
+        else:
+            mark_text += '3 '
+
+    marks_red = marks_ally if turn_index == 0 else marks_opponent
+    marks_blue = marks_opponent if turn_index == 0 else marks_ally
+    return total_score, total_mark, mark_text, marks_red, marks_blue
