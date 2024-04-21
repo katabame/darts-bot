@@ -28,14 +28,24 @@ def create_game_embed(game: str, red: hata.User, blue: hata.User | None, rounds:
     embed.add_author(f'{game} ({rounds}R)')
     embed.title = f'{red.display_name} vs {blue.display_name}' if blue else f'{red.display_name}'
 
+    if game == 'STANDARD CRICKET':
+        start_score = '0'
+        additional_text = '(Total: 0 marks)'
+    elif game == 'COUNT-UP':
+        start_score = '0'
+        additional_text = ''
+    else:
+        start_score = game
+        additional_text = ''
+
     embed.add_field(
-        name   = f'🎯 {red.display_name} [{'0' if game == 'STANDARD CRICKET' or game == 'COUNT-UP' else game}] {'(Total: 0 marks)' if game == 'STANDARD CRICKET' else ''}',
+        name   = f'🎯 {red.display_name} [{start_score}] {additional_text}',
         value  = stats_template,
         inline = True
     )
     if blue:
         embed.add_field(
-            name   = f'{blue.display_name} [{'0' if game == 'STANDARD CRICKET' or game == 'COUNT-UP' else game}] {'(Total: 0 marks)' if game == 'STANDARD CRICKET' else ''}',
+            name   = f'{blue.display_name} [{start_score}] {additional_text}',
             value  = stats_template,
             inline = True
         )
