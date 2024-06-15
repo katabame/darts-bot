@@ -20,6 +20,10 @@ def create_game_embed(game: str, red: hata.User, blue: hata.User | None, rounds:
         stats_template    = constants.stats_countup
         embed.color       = constants.color_countup
         rounds = 8 if rounds is None else rounds
+    elif game == 'CENTER COUNT-UP':
+        stats_template    = constants.stats_countup
+        embed.color       = constants.color_countup
+        rounds = 8 if rounds is None else rounds        
     else:
         stats_template    = constants.stats_01
         embed.color       = constants.color_01
@@ -39,13 +43,13 @@ def create_game_embed(game: str, red: hata.User, blue: hata.User | None, rounds:
         additional_text = ''
 
     embed.add_field(
-        name = f'🎯 {red.display_name} [{"0" if game == "STANDARD CRICKET" or game == "COUNT-UP" else game}] {"(Total: 0 marks)" if game == "STANDARD CRICKET" else ""}',
+        name = f'🎯 {red.display_name} [{"0" if game in ["STANDARD CRICKET", "COUNT-UP", "CENTER COUNT-UP"] else game}] {"(Total: 0 marks)" if game == "STANDARD CRICKET" else ""}',
         value  = stats_template,
         inline = True
     )
     if blue:
         embed.add_field(
-            name = f'{blue.display_name} [{"0" if game == "STANDARD CRICKET" or game == "COUNT-UP" else game}] {"(Total: 0 marks)" if game == "STANDARD CRICKET" else ""}',
+            name = f'{blue.display_name} [{"0" if game in ["STANDARD CRICKET", "COUNT-UP", "CENTER COUNT-UP"] else game}] {"(Total: 0 marks)" if game == "STANDARD CRICKET" else ""}',
             value  = stats_template,
             inline = True
         )
@@ -86,7 +90,7 @@ def calculate_score(scores: list[list[str]], separate_bull: bool = False) -> tup
             score_text += 'OUT '
         else:
             multiplier: int = 3 if score[0] == ['T'] else 2 if score[0] == 'D' else 1
-            score_text += f'{"" if score[0] in ["", "S"] else score[0]}{score[1]} '
+            score_text += f'{"" if score[0] in ["", "S", "I", "O"] else score[0]}{score[1]} '
             total_score += int(score[1] * multiplier)
 
     return total_score, score_text

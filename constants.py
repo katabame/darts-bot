@@ -4,7 +4,8 @@ games = {
     '301': '301', '501': '501', '701': '701',
     '901': '901', '1101': '1101', '1501': '1501',
     'STANDARD CRICKET': 'STANDARD CRICKET',
-    'COUNT-UP': 'COUNT-UP'
+    'COUNT-UP': 'COUNT-UP',
+    'CENTER COUNT-UP': 'CENTER COUNT-UP'
 }
 
 stats_countup = """

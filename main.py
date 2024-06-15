@@ -11,6 +11,7 @@ import utils
 import count_up
 import standard_cricket
 import zero_one
+import center_count_up
 
 ## Config
 with open('config.json', 'r') as f:
@@ -37,7 +38,7 @@ async def start(
     channel = await Satori.channel_create(
         event.guild_id,
         parent_id = event.channel.parent_id,
-        name = f'darts-{"".join(choices(ascii_letters + digits, k = 5))}'
+        name = f'darts-{"".join(choices(ascii_letters + digits, k = 5))}',
     )
     await Satori.message_create(channel, utils.create_start_message(red, blue))
     message = await Satori.message_create(channel, embed = embed)
@@ -78,7 +79,7 @@ async def message_create(client, message):
         #with client.keep_typing(message.channel):
         await client.reaction_clear(previous_message)
         await client.message_delete(message)
-        scores = re.findall(r'(|S|D|T)(20|1[0-9]|[1-9]|BULL|OUT)', message.content.upper().replace('-', ''))
+        scores = re.findall(r'(|S|D|T|I|O)(20|1[0-9]|[1-9]|BULL|OUT)', message.content.upper().replace('-', ''))
         if len(scores) != 3:
             await client.reaction_add(previous_message, BUILTIN_EMOJIS['warning'])
             return
@@ -87,6 +88,8 @@ async def message_create(client, message):
                 new_embed, is_gameover = count_up.create_embed(embed, scores)
             elif embed.author.name.startswith('STANDARD CRICKET'):
                 new_embed, is_gameover = standard_cricket.create_embed(embed, scores)
+            elif embed.author.name.startswith('CENTER COUNT-UP'):
+                new_embed, is_gameover = center_count_up.create_embed(embed, scores)
             else:
                 new_embed, is_gameover = zero_one.create_embed(embed, scores)
 
